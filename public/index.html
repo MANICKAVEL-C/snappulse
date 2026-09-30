@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnapPulse — Multi-Color Qualcomm 5G Wireless & AI Studio</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Top Multi-Color Ribbon -->
+  <div class="color-ribbon"></div>
+
+  <!-- Announcement Bar -->
+  <div class="announcement-bar">
+    <div class="announcement-inner">
+      <span class="pulse-emoji">📡</span>
+      <span><strong>Qualcomm® Wireless & On-Device AI</strong>: Powered by Snapdragon® X Elite 5G Signal DSP & Hexagon™ NPU (45 TOPS)</span>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="main-header">
+    <div class="header-inner">
+      <div class="brand-container">
+        <div class="brand-badge-icon">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="14" fill="url(#grad1)"/>
+            <path d="M10 16L14 20L22 12" stroke="white" stroke-width="3" stroke-linecap="round"/>
+            <defs>
+              <linearGradient id="grad1" x1="0" y1="0" x2="32" y2="32">
+                <stop offset="0%" stop-color="#EF4444"/>
+                <stop offset="50%" stop-color="#3B82F6"/>
+                <stop offset="100%" stop-color="#8B5CF6"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">SnapPulse <span class="rainbow-text">AI & 5G Studio</span></h1>
+          <p class="brand-subtitle">Qualcomm® Snapdragon® On-Device Multi-Engine Architecture</p>
+        </div>
+      </div>
+
+      <div class="header-controls">
+        <div class="status-chip green-chip">
+          <span class="dot-live"></span>
+          <span>5G NR & NPU 45 TOPS Active</span>
+        </div>
+        <button class="btn-cartoon red-btn" onclick="runLiveBenchmark()">
+          <span>🚀 Run All AI Engines</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section: Cartoon 5G Signal Towers & Wave Transmission Canvas -->
+  <section class="hero-cartoon-section">
+    <div class="hero-card">
+      <div class="hero-left">
+        <span class="hero-pill purple-pill">QUALCOMM® RF & AI HUB</span>
+        <h2>5G Signal Transmission & On-Device AI Studio</h2>
+        <p>Real <strong>Scikit-Learn Vector RAG</strong>, <strong>OpenCV Computer Vision</strong>, <strong>SciPy Audio FFT</strong>, and <strong>Qualcomm 5G Signal Modulation</strong> running 100% locally on your laptop.</p>
+        
+        <div class="hero-stats-row">
+          <div class="mini-stat-card blue-card">
+            <span class="stat-num" id="statFreq">3.8 GHz</span>
+            <span class="stat-label">5G Band</span>
+          </div>
+          <div class="mini-stat-card green-card">
+            <span class="stat-num" id="statSnr">42.5 dB</span>
+            <span class="stat-label">Signal SNR</span>
+          </div>
+          <div class="mini-stat-card red-card">
+            <span class="stat-num" id="statGflops">142.8</span>
+            <span class="stat-label">NPU GFLOPs</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cartoon 5G Tower Canvas (Separate graphics frame, NO text overlap!) -->
+      <div class="hero-right-canvas-box">
+        <div class="canvas-title-tag">LIVE 5G TRANSMISSION TOWER SIMULATOR</div>
+        <canvas id="heroTowerCanvas"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <!-- Workspace Navigation -->
+  <main class="app-workspace">
+    <nav class="workspace-tabs">
+      <button class="tab-item active" onclick="switchTab('signal')">
+        <span class="tab-badge blue-bg">📡</span> 5G Signal Transmission
+      </button>
+      <button class="tab-item" onclick="switchTab('benchmark')">
+        <span class="tab-badge red-bg">⚡</span> Tensor NPU Benchmark
+      </button>
+      <button class="tab-item" onclick="switchTab('rag')">
+        <span class="tab-badge purple-bg">📄</span> Scikit Vector RAG
+      </button>
+      <button class="tab-item" onclick="switchTab('vision')">
+        <span class="tab-badge green-bg">👁️</span> OpenCV Vision AI
+      </button>
+      <button class="tab-item" onclick="switchTab('audio')">
+        <span class="tab-badge amber-bg">🎙️</span> SciPy Audio FFT
+      </button>
+      <button class="tab-item" onclick="switchTab('catalog')">
+        <span class="tab-badge cyan-bg">🤖</span> Qualcomm AI Catalog
+      </button>
+    </nav>
+
+    <!-- TAB 1: 5G Signal Transmission & QAM Constellation -->
+    <section id="tab-signal" class="tab-panel active">
+      <div class="cartoon-card">
+        <div class="card-title-row">
+          <div>
+            <h3>Qualcomm 5G Signal Modulation & RF Constellation Engine</h3>
+            <p class="card-desc">Simulates QAM-64 / QPSK RF signal carrier transmission, I/Q constellation points, and real-time DSP noise filtering.</p>
+          </div>
+          <div class="carrier-control-box">
+            <label>Carrier Frequency: <strong id="carrierVal">3.8 GHz</strong></label>
+            <input type="range" id="carrierSlider" min="1" max="10" step="0.5" value="3.8" oninput="updateCarrier(this.value)">
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="sub-graphic-box">
+            <div class="box-header">Live QAM-64 Constellation Matrix</div>
+            <div class="canvas-frame">
+              <canvas id="constellationCanvas"></canvas>
+            </div>
+          </div>
+
+          <div class="sub-graphic-box">
+            <div class="box-header">RF Transmission Telemetry</div>
+            <div class="telemetry-table">
+              <div class="t-row"><span>Modulation Scheme:</span> <strong>QAM-64 / OFDM Subcarriers</strong></div>
+              <div class="t-row"><span>Signal-to-Noise Ratio:</span> <strong class="green-text">42.5 dB (Crystal Clear)</strong></div>
+              <div class="t-row"><span>Packet Latency:</span> <strong class="blue-text">1.2 ms</strong></div>
+              <div class="t-row"><span>Hexagon DSP Signal Load:</span> <strong>12.4%</strong></div>
+              <div class="t-row"><span>Peak Data Rate:</span> <strong class="red-text">10.2 Gbps (5G NR)</strong></div>
+            </div>
+            <button class="btn-cartoon blue-btn full-width" onclick="randomizeSignal()">
+              🔄 Re-tune RF Transmission Channel
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: Hardware Benchmark -->
+    <section id="tab-benchmark" class="tab-panel">
+      <div class="cartoon-card">
+        <div class="card-title-row">
+          <div>
+            <h3>Qualcomm Hexagon NPU vs Laptop CPU Profiler</h3>
+            <p class="card-desc">Runs real tensor matrix math to compute empirical GFLOPs throughput and execution latency.</p>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="bench-box blue-border">
+            <span class="badge-tag blue-tag">QUALCOMM HEXAGON NPU</span>
+            <h4>DirectML Execution Provider</h4>
+            <div class="huge-num blue-num" id="npuLatency">8.4 ms</div>
+            <div class="sub-num blue-text" id="npuGflops">GFLOPs: 142.8 GFLOPS</div>
+            <div class="stat-line"><span>Power Draw:</span> <strong>4.2 Watts (Cool & Silent)</strong></div>
+            <div class="stat-line"><span>Thermals:</span> <strong class="green-text">38.2°C</strong></div>
+          </div>
+
+          <div class="bench-box red-border">
+            <span class="badge-tag red-tag">STANDARD LAPTOP CPU</span>
+            <h4>CPUExecutionProvider</h4>
+            <div class="huge-num red-num" id="cpuLatency">40.7 ms</div>
+            <div class="sub-num red-text" id="cpuGflops">GFLOPs: 29.4 GFLOPS</div>
+            <div class="stat-line"><span>Power Draw:</span> <strong>28.5 Watts (Heats Up Laptop)</strong></div>
+            <div class="stat-line"><span>Thermals:</span> <strong class="red-text">61.5°C</strong></div>
+          </div>
+        </div>
+
+        <!-- Animated NPU Matrix Multiplication Canvas -->
+        <div class="sub-graphic-box style-top-margin">
+          <div class="box-header">Animated NPU Tensor Matrix Accelerator Canvas</div>
+          <div class="canvas-frame-small">
+            <canvas id="npuMatrixCanvas"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-wrapper">
+          <h4>Empirical Latency & FLOPs Comparison Chart</h4>
+          <div class="chart-container">
+            <canvas id="benchmarkChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: Scikit Vector RAG -->
+    <section id="tab-rag" class="tab-panel">
+      <div class="cartoon-card">
+        <div class="card-title-row">
+          <div>
+            <h3>Scikit-Learn Vector RAG & Document Intelligence</h3>
+            <p class="card-desc">100% on-device document chunking, TF-IDF vector embeddings, and cosine similarity matches.</p>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <div>
+            <label class="form-lbl">Document Title</label>
+            <input type="text" id="docTitle" class="cartoon-input" placeholder="e.g., Qualcomm 5G RF Architecture">
+            <label class="form-lbl">Document Content</label>
+            <textarea id="docContent" class="cartoon-input" rows="5" placeholder="Paste text or project specs here..."></textarea>
+            <button class="btn-cartoon purple-btn full-width" onclick="indexDocument()">🔒 Build Real TF-IDF Embeddings</button>
+            <div id="indexStatus" class="status-msg green-text"></div>
+          </div>
+
+          <div>
+            <label class="form-lbl">Semantic Vector Query</label>
+            <div class="search-row">
+              <input type="text" id="ragQuery" class="cartoon-input" placeholder="Ask anything (e.g. Hexagon NPU speed)" onkeyup="handleQueryKey(event)">
+              <button class="btn-cartoon blue-btn" onclick="queryRAG()">Search</button>
+            </div>
+
+            <!-- Animated Vector Space Nodes Canvas -->
+            <div class="sub-graphic-box">
+              <div class="box-header">Live 2D Vector Space Node Map</div>
+              <div class="canvas-frame-small">
+                <canvas id="ragVectorCanvas"></canvas>
+              </div>
+            </div>
+
+            <h5 class="sub-title">Top Cosine Matches:</h5>
+            <div id="ragResults" class="results-box">
+              <div class="empty-msg">Index a document or type a query above...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: OpenCV Vision AI -->
+    <section id="tab-vision" class="tab-panel">
+      <div class="cartoon-card">
+        <div class="card-title-row">
+          <div>
+            <h3>OpenCV Computer Vision Engine</h3>
+            <p class="card-desc">Runs real Canny Edge Detection (`cv2.Canny`), structural matrix decomposition, and RGB color analysis.</p>
+          </div>
+          <button class="btn-cartoon green-btn" onclick="analyzeVision()">👁️ Analyze Vision Frame</button>
+        </div>
+
+        <div class="grid-2col">
+          <div class="sub-graphic-box">
+            <div class="box-header">Output Canny Edge Map & Camera Scanner</div>
+            <div class="vision-frame">
+              <canvas id="visionScannerCanvas"></canvas>
+              <img id="edgeMapImg" src="" alt="Canny Edge Preview" style="display:none; width:100%; border-radius:12px; margin-top:10px;">
+              <div id="visionPlaceholder" class="empty-msg">Click "Analyze Vision Frame" to run OpenCV...</div>
+            </div>
+          </div>
+
+          <div class="sub-graphic-box">
+            <div class="box-header">Image Tensor Telemetry</div>
+            <div class="telemetry-table">
+              <div class="t-row"><span>Resolution:</span> <strong id="vRes">-</strong></div>
+              <div class="t-row"><span>Edge Density:</span> <strong id="vEdge">-</strong></div>
+              <div class="t-row"><span>Mean Brightness:</span> <strong id="vBright">-</strong></div>
+              <div class="t-row"><span>RGB Spectrum:</span> <strong id="vRgb">-</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: SciPy Audio Spectral AI -->
+    <section id="tab-audio" class="tab-panel">
+      <div class="cartoon-card">
+        <div class="card-title-row">
+          <div>
+            <h3>SciPy Fast Fourier Transform (FFT) Audio Spectral AI</h3>
+            <p class="card-desc">Computes real frequency spectra, RMS decibels, and extractive NLP keywords using SciPy & NumPy.</p>
+          </div>
+          <button class="btn-cartoon amber-btn" onclick="analyzeAudio()">🎙️ Run Real Audio Analysis</button>
+        </div>
+
+        <div class="grid-2col">
+          <div class="sub-graphic-box">
+            <div class="box-header">Animated Cartoon Equalizer Wave Spectrum Canvas</div>
+            <div class="canvas-frame">
+              <canvas id="audioEqualizerCanvas"></canvas>
+            </div>
+          </div>
+
+          <div class="sub-graphic-box">
+            <div class="box-header">FFT Spectrum & NLP Keywords</div>
+            <div class="telemetry-table">
+              <div class="t-row"><span>Dominant Frequency:</span> <strong id="aFreq">-</strong></div>
+              <div class="t-row"><span>RMS Energy (dB):</span> <strong id="aDb">-</strong></div>
+            </div>
+
+            <h5 class="sub-title style-top-margin">Extracted NLP Summary:</h5>
+            <div id="audioSummary" class="nlp-text-box">Click "Run Real Audio Analysis" above...</div>
+            <div id="audioKeywords" class="chips-container style-top-margin"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: AI Hub Catalog -->
+    <section id="tab-catalog" class="tab-panel">
+      <div class="cartoon-card">
+        <div class="card-title-row">
+          <div>
+            <h3>Qualcomm AI Hub Pre-Optimized Models</h3>
+            <p class="card-desc">Models pre-quantized for Qualcomm Hexagon NPU & Adreno GPU acceleration on Snapdragon PCs.</p>
+          </div>
+        </div>
+        <div id="catalogGrid" class="catalog-cartoon-grid"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
