@@ -9,8 +9,48 @@ document.addEventListener("DOMContentLoaded", () => {
   initVisionScannerCanvas();
   initAudioEqualizerCanvas();
   initChart();
+  fetchHealthStatus();
   fetchCatalog();
 });
+
+// XSS Prevention Helper
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// User-Facing Error Toast Notification
+function showErrorToast(message) {
+  const toast = document.getElementById('uiErrorAlert');
+  if (!toast) return;
+  toast.innerText = `⚠️ ${message}`;
+  toast.style.display = 'block';
+  setTimeout(() => {
+    toast.style.display = 'none';
+  }, 5000);
+}
+
+// Fetch Health Status & Detect Hardware Providers
+async function fetchHealthStatus() {
+  try {
+    const res = await fetch('/api/health');
+    if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+    const data = await res.json();
+    
+    const statusPill = document.getElementById('signalStatus');
+    if (statusPill) {
+      statusPill.innerText = escapeHtml(data.detected_provider);
+    }
+  } catch (e) {
+    console.error("Health check error:", e);
+    showErrorToast("Could not connect to SnapPulse local API server");
+  }
+}
 
 // Tab Switcher
 function switchTab(tabId) {
@@ -38,7 +78,7 @@ function randomizeSignal() {
   drawConstellation();
 }
 
-// 1. Cartoon 5G Signal Transmission Tower & Wave Canvas (Hero Section)
+// 1. Hero Signal Tower Canvas
 function initHeroTowerCanvas() {
   const canvas = document.getElementById('heroTowerCanvas');
   if (!canvas) return;
@@ -56,7 +96,6 @@ function initHeroTowerCanvas() {
     const towerX = 60;
     const towerY = canvas.height - 20;
 
-    // Draw Cartoon 5G Tower Structure
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#3B82F6';
     ctx.beginPath();
@@ -65,7 +104,6 @@ function initHeroTowerCanvas() {
     ctx.lineTo(towerX + 25, towerY);
     ctx.stroke();
 
-    // Tower Cross Braces
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = '#8B5CF6';
     ctx.beginPath();
@@ -73,13 +111,11 @@ function initHeroTowerCanvas() {
     ctx.moveTo(towerX - 10, towerY - 70); ctx.lineTo(towerX + 10, towerY - 70);
     ctx.stroke();
 
-    // Antenna Pulsing Tip
     ctx.beginPath();
     ctx.arc(towerX, towerY - 105, 6, 0, Math.PI * 2);
     ctx.fillStyle = '#EF4444';
     ctx.fill();
 
-    // Expanding Multi-Color RF Waves
     for (let r = 20; r < 240; r += 40) {
       const radius = (r + offset * 30) % 240;
       const alpha = 1 - radius / 240;
@@ -90,7 +126,6 @@ function initHeroTowerCanvas() {
       ctx.stroke();
     }
 
-    // Bouncing Signal Transmission Packet Bubbles
     for (let i = 0; i < 4; i++) {
       const bx = towerX + ((offset * 100 + i * 80) % (canvas.width - 90));
       const by = (towerY - 105) + Math.sin(bx * 0.05) * 20;
@@ -121,7 +156,6 @@ function drawConstellation() {
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Axes
   ctx.strokeStyle = '#CBD5E1';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
@@ -143,7 +177,7 @@ function drawConstellation() {
   }
 }
 
-// 3. Animated NPU Tensor Core Matrix Accelerator Canvas
+// 3. NPU Matrix Canvas
 function initNPUMatrixCanvas() {
   const canvas = document.getElementById('npuMatrixCanvas');
   if (!canvas) return;
@@ -176,7 +210,7 @@ function initNPUMatrixCanvas() {
   render();
 }
 
-// 4. Animated 2D Vector Space Node Map Canvas
+// 4. RAG Vector Canvas
 function initRAGVectorCanvas() {
   const canvas = document.getElementById('ragVectorCanvas');
   if (!canvas) return;
@@ -227,7 +261,7 @@ function initRAGVectorCanvas() {
   render();
 }
 
-// 5. Vision Camera Scanner Beam Canvas
+// 5. Vision Scanner Canvas
 function initVisionScannerCanvas() {
   const canvas = document.getElementById('visionScannerCanvas');
   if (!canvas) return;
@@ -245,7 +279,6 @@ function initVisionScannerCanvas() {
     ctx.fillStyle = '#F8FAFC';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Laser Beam Line
     ctx.strokeStyle = '#10B981';
     ctx.lineWidth = 3;
     ctx.beginPath();
@@ -258,7 +291,7 @@ function initVisionScannerCanvas() {
   render();
 }
 
-// 6. Cartoon Multi-Color Audio Equalizer Wave Spectrum Canvas
+// 6. Audio Equalizer Canvas
 function initAudioEqualizerCanvas() {
   const canvas = document.getElementById('audioEqualizerCanvas');
   if (!canvas) return;
@@ -301,10 +334,10 @@ function initChart() {
   benchmarkChart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: ['Qualcomm DirectML (Hexagon NPU)', 'CPUExecutionProvider (Standard CPU)'],
+      labels: ['Target Execution Provider', 'CPU Baseline Provider'],
       datasets: [
         {
-          label: 'Inference Latency (ms) [Lower is Better]',
+          label: 'Median Latency (ms) [Lower is Better]',
           data: [8.4, 40.7],
           backgroundColor: ['rgba(59, 130, 246, 0.85)', 'rgba(239, 68, 68, 0.85)'],
           borderColor: ['#3B82F6', '#EF4444'],
@@ -342,7 +375,7 @@ function initChart() {
   });
 }
 
-// Run Benchmark
+// Run Real ONNX Benchmark
 async function runLiveBenchmark() {
   try {
     const res = await fetch('/api/benchmark/run', {
@@ -350,20 +383,37 @@ async function runLiveBenchmark() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ matrix_size: 512, iterations: 20 })
     });
+    
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP Error ${res.status}`);
+    }
+
     const data = await res.json();
 
-    document.getElementById('npuLatency').innerText = `${data.npu_results.latency_ms} ms`;
-    document.getElementById('cpuLatency').innerText = `${data.cpu_results.latency_ms} ms`;
-    document.getElementById('npuGflops').innerText = `GFLOPs: ${data.npu_results.gflops} GFLOPS`;
+    document.getElementById('targetProviderName').innerText = escapeHtml(data.target_results.provider_label);
+    document.getElementById('npuLatency').innerText = `${data.target_results.median_latency_ms} ms`;
+    document.getElementById('cpuLatency').innerText = `${data.cpu_results.median_latency_ms} ms`;
+    document.getElementById('npuP95').innerText = `${data.target_results.p95_latency_ms} ms`;
+    document.getElementById('cpuP95').innerText = `${data.cpu_results.p95_latency_ms} ms`;
+    document.getElementById('npuGflops').innerText = `GFLOPs: ${data.target_results.gflops} GFLOPS`;
     document.getElementById('cpuGflops').innerText = `GFLOPs: ${data.cpu_results.gflops} GFLOPS`;
-    document.getElementById('statGflops').innerText = data.npu_results.gflops;
+    document.getElementById('statGflops').innerText = data.target_results.gflops;
+
+    if (data.is_hardware_accelerated) {
+      document.getElementById('npuBadgeLabel').innerText = "HARDWARE ACCELERATOR ACTIVE";
+    } else {
+      document.getElementById('npuBadgeLabel').innerText = "CPU BENCHMARK";
+    }
 
     // Update Chart
-    benchmarkChart.data.datasets[0].data = [data.npu_results.latency_ms, data.cpu_results.latency_ms];
-    benchmarkChart.data.datasets[1].data = [data.npu_results.gflops, data.cpu_results.gflops];
+    benchmarkChart.data.labels = [data.target_results.provider, 'CPUExecutionProvider'];
+    benchmarkChart.data.datasets[0].data = [data.target_results.median_latency_ms, data.cpu_results.median_latency_ms];
+    benchmarkChart.data.datasets[1].data = [data.target_results.gflops, data.cpu_results.gflops];
     benchmarkChart.update();
   } catch (e) {
     console.error("Benchmark error:", e);
+    showErrorToast(e.message || "Benchmark failed to execute");
   }
 }
 
@@ -371,7 +421,10 @@ async function runLiveBenchmark() {
 async function indexDocument() {
   const title = document.getElementById('docTitle').value.trim();
   const content = document.getElementById('docContent').value.trim();
-  if (!title || !content) return;
+  if (!title || !content) {
+    showErrorToast("Document title and content cannot be empty");
+    return;
+  }
 
   try {
     const res = await fetch('/api/rag/index', {
@@ -379,10 +432,17 @@ async function indexDocument() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, content })
     });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
     const data = await res.json();
-    document.getElementById('indexStatus').innerText = `✅ Indexed "${title}" (${data.indexed_chunks} chunks vectorized via TF-IDF)`;
+    document.getElementById('indexStatus').innerText = `✅ Indexed "${escapeHtml(title)}" (${data.indexed_chunks} chunks vectorized via TF-IDF)`;
   } catch (e) {
     console.error("Index error:", e);
+    showErrorToast(e.message || "Document indexing failed");
   }
 }
 
@@ -400,12 +460,18 @@ async function queryRAG() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query })
     });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
     const data = await res.json();
     const container = document.getElementById('ragResults');
     container.innerHTML = '';
 
-    if (data.matches.length === 0) {
-      container.innerHTML = `<div class="empty-msg">No semantic matches found for "${query}".</div>`;
+    if (!data.matches || data.matches.length === 0) {
+      container.innerHTML = `<div class="empty-msg">No semantic matches found for "${escapeHtml(query)}".</div>`;
       return;
     }
 
@@ -414,64 +480,150 @@ async function queryRAG() {
       card.className = 'match-card';
       card.innerHTML = `
         <div style="display:flex; justify-content:space-between; color:#3B82F6; font-weight:800; font-size:13px; margin-bottom:4px;">
-          <span>📄 ${m.title}</span>
-          <span>Cosine Score: ${m.score}</span>
+          <span>📄 ${escapeHtml(m.title)}</span>
+          <span>Cosine Score: ${escapeHtml(m.score)}</span>
         </div>
-        <div style="font-family:var(--font-mono); font-size:13px; color:#1E293B;">"${m.snippet}"</div>
+        <div style="font-family:var(--font-mono); font-size:13px; color:#1E293B;">"${escapeHtml(m.snippet)}"</div>
       `;
       container.appendChild(card);
     });
   } catch (e) {
     console.error("Query error:", e);
+    showErrorToast(e.message || "Search query failed");
   }
 }
 
+// Upload Custom Vision Image
+async function uploadVisionImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('/api/vision/analyze', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    renderVisionResults(data);
+  } catch (e) {
+    console.error("Upload vision error:", e);
+    showErrorToast(e.message || "Image upload failed");
+  }
+}
+
+// Analyze Vision Frame (Demo or Custom)
 async function analyzeVision() {
   try {
     const res = await fetch('/api/vision/analyze', { method: 'POST' });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
     const data = await res.json();
-
-    const img = document.getElementById('edgeMapImg');
-    const placeholder = document.getElementById('visionPlaceholder');
-
-    img.src = data.edge_map_base64;
-    img.style.display = 'block';
-    placeholder.style.display = 'none';
-
-    document.getElementById('vRes').innerText = data.resolution;
-    document.getElementById('vEdge').innerText = `${data.edge_density_pct}% edge pixels`;
-    document.getElementById('vBright').innerText = `${data.mean_brightness} / 255`;
-    document.getElementById('vRgb').innerText = `R:${data.rgb_distribution.red} G:${data.rgb_distribution.green} B:${data.rgb_distribution.blue}`;
+    renderVisionResults(data);
   } catch (e) {
     console.error("Vision error:", e);
+    showErrorToast(e.message || "Vision analysis failed");
   }
 }
 
+function renderVisionResults(data) {
+  const img = document.getElementById('edgeMapImg');
+  const placeholder = document.getElementById('visionPlaceholder');
+  const sourceLabel = document.getElementById('visionSourceLabel');
+
+  img.src = data.edge_map_base64;
+  img.style.display = 'block';
+  placeholder.style.display = 'none';
+
+  if (sourceLabel) sourceLabel.innerText = escapeHtml(data.source_label);
+
+  document.getElementById('vSource').innerText = data.is_custom_upload ? "Custom Image Upload" : "Synthetic Demo Frame";
+  document.getElementById('vRes').innerText = escapeHtml(data.resolution);
+  document.getElementById('vEdge').innerText = `${data.edge_density_pct}% edge pixels`;
+  document.getElementById('vBright').innerText = `${data.mean_brightness} / 255`;
+  document.getElementById('vRgb').innerText = `R:${data.rgb_distribution.red} G:${data.rgb_distribution.green} B:${data.rgb_distribution.blue}`;
+}
+
+// Upload Custom Audio File
+async function uploadAudioFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await fetch('/api/audio/analyze', {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    renderAudioResults(data);
+  } catch (e) {
+    console.error("Upload audio error:", e);
+    showErrorToast(e.message || "Audio upload failed");
+  }
+}
+
+// Analyze Audio (Demo or Custom)
 async function analyzeAudio() {
   try {
     const res = await fetch('/api/audio/analyze', { method: 'POST' });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+
     const data = await res.json();
-
-    document.getElementById('aFreq').innerText = `${data.spectral_metrics.dominant_frequency_hz} Hz`;
-    document.getElementById('aDb').innerText = `${data.spectral_metrics.rms_energy_db} dB`;
-    document.getElementById('audioSummary').innerText = data.summary;
-
-    const kwContainer = document.getElementById('audioKeywords');
-    kwContainer.innerHTML = '';
-    data.keywords.forEach(kw => {
-      const chip = document.createElement('span');
-      chip.style.cssText = "background: rgba(139, 92, 246, 0.15); color: #7C3AED; font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 20px; margin-right: 6px; margin-bottom: 6px; display: inline-block;";
-      chip.innerText = `# ${kw}`;
-      kwContainer.appendChild(chip);
-    });
+    renderAudioResults(data);
   } catch (e) {
     console.error("Audio error:", e);
+    showErrorToast(e.message || "Audio analysis failed");
   }
 }
 
+function renderAudioResults(data) {
+  const sourceLabel = document.getElementById('audioSourceLabel');
+  if (sourceLabel) sourceLabel.innerText = escapeHtml(data.source_label);
+
+  document.getElementById('aSource').innerText = data.is_custom_upload ? "Custom WAV Upload" : "Synthetic Demo Signal";
+  document.getElementById('aFreq').innerText = `${data.spectral_metrics.dominant_frequency_hz} Hz`;
+  document.getElementById('aDb').innerText = `${data.spectral_metrics.rms_energy_db} dB`;
+  document.getElementById('audioSummary').innerText = escapeHtml(data.summary);
+
+  const kwContainer = document.getElementById('audioKeywords');
+  kwContainer.innerHTML = '';
+  data.keywords.forEach(kw => {
+    const chip = document.createElement('span');
+    chip.style.cssText = "background: rgba(139, 92, 246, 0.15); color: #7C3AED; font-weight: 800; font-size: 12px; padding: 4px 10px; border-radius: 20px; margin-right: 6px; margin-bottom: 6px; display: inline-block;";
+    chip.innerText = `# ${escapeHtml(kw)}`;
+    kwContainer.appendChild(chip);
+  });
+}
+
+// Catalog
 async function fetchCatalog() {
   try {
     const res = await fetch('/api/ai-hub/models');
+    if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+
     const models = await res.json();
     const grid = document.getElementById('catalogGrid');
     if (!grid) return;
@@ -482,18 +634,19 @@ async function fetchCatalog() {
       card.style.cssText = "background: #F8FAFC; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 24px;";
       card.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-          <h4 style="font-weight: 800; color: #0F172A;">${m.name}</h4>
-          <span style="background: rgba(59, 130, 246, 0.15); color: #3B82F6; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 6px;">${m.category}</span>
+          <h4 style="font-weight: 800; color: #0F172A;">${escapeHtml(m.name)}</h4>
+          <span style="background: rgba(59, 130, 246, 0.15); color: #3B82F6; font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 6px;">${escapeHtml(m.category)}</span>
         </div>
-        <p style="font-size: 13px; color: #475569; margin-bottom: 14px;">${m.description}</p>
+        <p style="font-size: 13px; color: #475569; margin-bottom: 14px;">${escapeHtml(m.description)}</p>
         <div style="font-family: var(--font-mono); font-size: 12px; color: #3B82F6;">
-          <div>Params: ${m.parameters} | ${m.quantization}</div>
-          <div>Hexagon NPU Latency: ${m.latency_npu_ms} ms (vs CPU ${m.latency_cpu_ms} ms)</div>
+          <div>Params: ${escapeHtml(m.parameters)} | ${escapeHtml(m.quantization)}</div>
+          <div>Simulated Latency: ${escapeHtml(m.latency_npu_ms)} ms (vs CPU ${escapeHtml(m.latency_cpu_ms)} ms)</div>
         </div>
       `;
       grid.appendChild(card);
     });
   } catch (e) {
     console.error("Catalog error:", e);
+    showErrorToast("Could not load AI Hub model catalog");
   }
 }

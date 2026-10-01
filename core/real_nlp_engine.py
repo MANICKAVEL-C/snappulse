@@ -5,8 +5,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 class RealNLPRAGEngine:
     """
-    Real NLP & Privacy RAG Engine using Scikit-Learn TF-IDF Vectorization & Cosine Similarity.
-    Computes mathematical vector embeddings and performs real semantic context retrieval.
+    Robust On-Device Privacy RAG Engine using Scikit-Learn TF-IDF Vectorization & Cosine Similarity.
+    Atomically validates new document terms and vocabulary before mutating state.
     """
     def __init__(self):
         self.documents = []
@@ -14,26 +14,43 @@ class RealNLPRAGEngine:
         self.tfidf_matrix = None
 
     def add_document(self, title: str, content: str):
-        # Break document into real semantic sentence/paragraph chunks
-        raw_chunks = [c.strip() for c in re.split(r'\n+|\. ', content) if len(c.strip()) > 15]
+        content = content.strip()
+        if not content:
+            raise ValueError("Document content cannot be empty")
+
+        raw_chunks = [c.strip() for c in re.split(r'\n+|\. ', content) if len(c.strip()) > 3]
         if not raw_chunks:
             raw_chunks = [content]
 
-        doc_entry = {
+        # 1. Validate the NEW document chunks FIRST
+        new_doc_vectorizer = TfidfVectorizer(stop_words='english')
+        try:
+            new_matrix = new_doc_vectorizer.fit_transform(raw_chunks)
+            if new_matrix.shape[1] == 0 or new_matrix.nnz == 0:
+                raise ValueError("Document contains no valid indexing terms or stopwords only")
+        except ValueError:
+            raise ValueError("Document contains no valid indexing terms or stopwords only")
+
+        # 2. Prepare combined candidate dataset
+        candidate_docs = list(self.documents) + [{
             "id": len(self.documents),
             "title": title,
             "full_text": content,
             "chunks": raw_chunks
-        }
-        self.documents.append(doc_entry)
+        }]
 
-        # Re-fit TfidfVectorizer over all accumulated chunks
         all_chunks = []
-        for doc in self.documents:
+        for doc in candidate_docs:
             all_chunks.extend(doc["chunks"])
 
-        if all_chunks:
-            self.tfidf_matrix = self.vectorizer.fit_transform(all_chunks)
+        # 3. Fit full combined vocabulary
+        candidate_vectorizer = TfidfVectorizer(stop_words='english')
+        candidate_matrix = candidate_vectorizer.fit_transform(all_chunks)
+
+        # Commit state ONLY on verified success
+        self.documents = candidate_docs
+        self.vectorizer = candidate_vectorizer
+        self.tfidf_matrix = candidate_matrix
 
         return len(raw_chunks)
 
@@ -41,17 +58,23 @@ class RealNLPRAGEngine:
         if self.tfidf_matrix is None or not self.documents:
             return []
 
-        # Vectorize query using fitted TfidfVectorizer
-        query_vector = self.vectorizer.transform([query_text])
-        scores = cosine_similarity(query_vector, self.tfidf_matrix).flatten()
+        query_text = query_text.strip()
+        if not query_text:
+            return []
 
-        # Gather all chunks with doc mapping
+        try:
+            query_vector = self.vectorizer.transform([query_text])
+            if query_vector.nnz == 0:
+                return []
+            scores = cosine_similarity(query_vector, self.tfidf_matrix).flatten()
+        except Exception:
+            return []
+
         chunk_map = []
         for doc in self.documents:
             for chunk in doc["chunks"]:
                 chunk_map.append({"title": doc["title"], "chunk": chunk})
 
-        # Rank top_k matches
         top_indices = np.argsort(scores)[::-1][:top_k]
         results = []
         for idx in top_indices:
@@ -65,12 +88,9 @@ class RealNLPRAGEngine:
         return results
 
     def extract_summary_and_keywords(self, text: str):
-        """
-        Real extractive NLP summarizer using TF-IDF term weights and sentence scoring.
-        """
-        sentences = [s.strip() for s in re.split(r'\n+|\. ', text) if len(s.strip()) > 10]
+        sentences = [s.strip() for s in re.split(r'\n+|\. ', text) if len(s.strip()) > 5]
         if not sentences:
-            return {"summary": text, "keywords": ["Snapdragon", "AI", "NPU"]}
+            return {"summary": text[:200], "keywords": ["Snapdragon", "AI"]}
 
         vec = TfidfVectorizer(stop_words='english')
         try:
@@ -82,7 +102,6 @@ class RealNLPRAGEngine:
             top_sent_idx.sort()
             summary = " ".join([sentences[i] for i in top_sent_idx])
 
-            # Extract top TF-IDF keywords
             col_sums = np.array(matrix.sum(axis=0)).flatten()
             top_kw_idx = np.argsort(col_sums)[::-1][:5]
             keywords = [feature_names[i].capitalize() for i in top_kw_idx]
@@ -96,7 +115,7 @@ class RealNLPRAGEngine:
         except Exception:
             return {
                 "summary": text[:200] + "...",
-                "keywords": ["Qualcomm", "Snapdragon", "Hexagon"],
+                "keywords": ["Qualcomm", "Snapdragon"],
                 "sentence_count": len(sentences),
-                "vocab_size": 10
+                "vocab_size": 2
             }

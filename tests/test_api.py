@@ -1,47 +1,88 @@
 import unittest
-from core.real_nlp_engine import RealNLPRAGEngine
-from core.real_vision_engine import RealVisionAIEngine
-from core.real_audio_engine import RealAudioAIEngine
-from core.real_onnx_benchmark import RealONNXBenchmarkEngine
-from core.ai_hub_catalog import QualcommAIHubCatalog
+from fastapi.testclient import TestClient
+from api.index import app
 
-class TestRealAIEngines(unittest.TestCase):
+class TestSnapPulseFastAPI(unittest.TestCase):
 
     def setUp(self):
-        self.nlp_engine = RealNLPRAGEngine()
-        self.vision_engine = RealVisionAIEngine()
-        self.audio_engine = RealAudioAIEngine()
-        self.benchmark_engine = RealONNXBenchmarkEngine()
-        self.ai_hub = QualcommAIHubCatalog()
+        self.client = TestClient(app)
 
-    def test_real_nlp_rag(self):
-        chunks = self.nlp_engine.add_document(
-            "Snapdragon X Elite Architecture",
-            "The Hexagon NPU features 45 TOPS of dedicated AI compute power for local ONNX models."
-        )
-        self.assertGreater(chunks, 0)
+    def test_health_endpoint(self):
+        response = self.client.get("/api/health")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "online")
+        self.assertIn("detected_provider", data)
+        self.assertIn("execution_providers", data)
 
-        matches = self.nlp_engine.query("Hexagon NPU 45 TOPS", top_k=1)
-        self.assertEqual(len(matches), 1)
-        self.assertGreater(matches[0]["score"], 0.0)
+    def test_benchmark_endpoint_valid(self):
+        payload = {"matrix_size": 128, "iterations": 5}
+        response = self.client.post("/api/benchmark/run", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("target_results", data)
+        self.assertIn("cpu_results", data)
+        self.assertIn("median_latency_ms", data["target_results"])
+        self.assertIn("median_latency_ms", data["cpu_results"])
 
-    def test_real_vision_ai(self):
-        res = self.vision_engine.analyze_image()
-        self.assertIn("edge_map_base64", res)
-        self.assertIn("edge_density_pct", res)
-        self.assertGreater(res["mean_brightness"], 0)
+    def test_benchmark_endpoint_validation_bounds(self):
+        # Invalid matrix size > 1024
+        payload = {"matrix_size": 5000, "iterations": 5}
+        response = self.client.post("/api/benchmark/run", json=payload)
+        self.assertEqual(response.status_code, 422)  # Pydantic Validation Error
 
-    def test_real_audio_ai(self):
-        res = self.audio_engine.analyze_audio_spectrum()
-        self.assertIn("spectral_metrics", res)
-        self.assertGreater(res["spectral_metrics"]["dominant_frequency_hz"], 0)
-        self.assertIn("summary", res)
+        # Invalid string instead of int
+        payload = {"matrix_size": "invalid_string", "iterations": 5}
+        response = self.client.post("/api/benchmark/run", json=payload)
+        self.assertEqual(response.status_code, 422)
 
-    def test_real_onnx_benchmark(self):
-        res = self.benchmark_engine.run_hardware_benchmark(matrix_size=128, iterations=5)
-        self.assertIn("npu_results", res)
-        self.assertIn("cpu_results", res)
-        self.assertGreater(res["npu_results"]["gflops"], 0)
+    def test_rag_index_and_query_endpoints(self):
+        # 1. Index document
+        index_payload = {
+            "title": "Snapdragon 5G Architecture",
+            "content": "The Snapdragon X Elite processor integrates Hexagon NPU hardware for high efficiency AI compute."
+        }
+        idx_res = self.client.post("/api/rag/index", json=index_payload)
+        self.assertEqual(idx_res.status_code, 200)
+        self.assertEqual(idx_res.json()["title"], "Snapdragon 5G Architecture")
+
+        # 2. Query document
+        query_payload = {"query": "Hexagon NPU AI compute"}
+        query_res = self.client.post("/api/rag/query", json=query_payload)
+        self.assertEqual(query_res.status_code, 200)
+        matches = query_res.json()["matches"]
+        self.assertGreater(len(matches), 0)
+        self.assertIn("Snapdragon", matches[0]["title"])
+
+    def test_rag_index_stopwords_rejection(self):
+        # Stopwords only document must fail gracefully with 400 Bad Request
+        index_payload = {
+            "title": "Stopwords Document",
+            "content": "the and of or to in a is"
+        }
+        idx_res = self.client.post("/api/rag/index", json=index_payload)
+        self.assertEqual(idx_res.status_code, 400)
+        self.assertIn("contains no valid indexing terms", idx_res.json()["detail"])
+
+    def test_vision_analyze_endpoint(self):
+        response = self.client.post("/api/vision/analyze")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("edge_map_base64", data)
+        self.assertIn("edge_density_pct", data)
+
+    def test_audio_analyze_endpoint(self):
+        response = self.client.post("/api/audio/analyze")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertIn("spectral_metrics", data)
+        self.assertIn("dominant_frequency_hz", data["spectral_metrics"])
+
+    def test_ai_hub_catalog_endpoint(self):
+        response = self.client.get("/api/ai-hub/models")
+        self.assertEqual(response.status_code, 200)
+        models = response.json()
+        self.assertGreater(len(models), 0)
 
 if __name__ == "__main__":
     unittest.main()

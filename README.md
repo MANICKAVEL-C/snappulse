@@ -1,25 +1,28 @@
-# ⚡ SnapPulse: Snapdragon® On-Device AI Workspace Co-Pilot
+# ⚡ SnapPulse: Snapdragon® Wireless Communication & On-Device AI Studio
 
-SnapPulse is a full-stack, Vercel-deployable AI application designed and optimized for **Snapdragon-powered HP PCs** (Windows on ARM). It showcases the power of the **Qualcomm® Hexagon™ NPU (45 TOPS)** by running on-device AI workloads (privacy-first document RAG, local Whisper meeting transcription, and Qualcomm AI Hub pre-optimized models) with zero cloud latency and minimal energy draw.
+[![CI Test Suite](https://github.com/MANICKAVEL-C/snappulse/actions/workflows/ci.yml/badge.svg)](https://github.com/MANICKAVEL-C/snappulse/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
----
-
-## 🌟 Key Features
-
-1. **⚡ Live Hexagon NPU vs. CPU Telemetry**: Real-time profiler comparing DirectML / QNN ONNX execution against standard CPU execution across latency (ms), throughput (tokens/sec), and power draw (Watts).
-2. **🤖 Qualcomm® AI Hub Model Catalog**: Filterable explorer detailing ONNX quantization formats (W4A16, FP16, INT8) for Llama-3 8B, Whisper Base, BGE-Small, MobileNetV4, and Depth Anything V2.
-3. **📄 SnapRAG Privacy Vault**: Zero-cloud document indexer and semantic vector search engine operating 100% locally on-device.
-4. **🎙️ SnapVoice Meeting Studio**: Local audio transcription, noise-filter processing, speaker diarization, and structured action item tag extraction.
-5. **🚀 1-Click Vercel Deployment**: Pre-configured with `vercel.json` and a Python FastAPI serverless backend (`api/index.py`).
+SnapPulse is a full-stack, production-grade AI studio designed and optimized for **Snapdragon-powered HP PCs** (Windows on ARM). It combines **Qualcomm® 5G Wireless Signal Processing** with **Hexagon™ NPU (45 TOPS)** hardware acceleration, delivering real on-device NLP vector search, OpenCV vision analysis, SciPy audio spectral processing, and real ONNX Runtime execution sessions.
 
 ---
 
-## 🛠️ Tech Stack
+## 🌟 Architecture & Key Features
 
-- **Backend Framework**: Python 3.12, FastAPI, Uvicorn, Pydantic
-- **AI Execution Engine**: DirectML / QNN ONNX Runtime abstraction (`core/npu_benchmark.py`)
-- **Frontend UI**: HTML5, Tailwind-inspired Glassmorphism CSS, Vanilla JS, Chart.js, Canvas Audio Visualizer
-- **Cloud & Deployment**: Vercel Serverless Functions (`vercel.json` + `@vercel/python`)
+1. **⚡ Real ONNX Runtime Execution Profiler**: Runs real ONNX `InferenceSession` model graphs in memory using warm-up runs, median/p95 latency profiling, and real execution provider detection (`QNNExecutionProvider` -> `DmlExecutionProvider` -> `CPUExecutionProvider`).
+2. **📡 5G Wireless Carrier Waveform & QAM-64 Constellation**: Interactive visualizers demonstrating 5G NR signal modulation, QAM-64 constellation points, and DSP noise filtering.
+3. **📄 Scikit-Learn Privacy RAG Vault**: Real TF-IDF L2 vector embeddings and cosine similarity search running 100% locally on-device.
+4. **👁️ OpenCV Computer Vision Engine**: Supports real user image uploads (`cv2.Canny` edge detection, brightness, and RGB spectrum channels).
+5. **🎙️ SciPy Audio Spectral AI**: Supports real WAV audio uploads (Fast Fourier Transform frequency spectrum, RMS decibels, and NLP summarization).
+6. **🤖 Qualcomm® AI Hub Model Catalog**: Filterable specifications for pre-quantized Qualcomm AI Hub assets (Llama-3 8B W4A16, Whisper Base FP16, BGE-Small INT8, MobileNetV4, Depth Anything V2).
+
+---
+
+## 🛠️ Tech Stack & Dependencies
+
+- **API Backend**: FastAPI (`>=0.109.0`), Uvicorn (`>=0.27.0`), Pydantic (`>=2.5.0`)
+- **AI & ML Execution**: ONNX Runtime (`>=1.16.0`), ONNX (`>=1.15.0`), Scikit-Learn (`>=1.3.0`), SciPy (`>=1.11.0`), OpenCV Headless (`>=4.8.0`), NumPy (`>=1.24.0,<2.0.0`)
+- **Frontend UI**: Responsive HTML5, Tailwind-inspired Light Theme, Vanilla JS, Chart.js, Interactive HTML5 Canvases
 
 ---
 
@@ -30,12 +33,12 @@ SnapPulse is a full-stack, Vercel-deployable AI application designed and optimiz
 pip install -r requirements.txt
 ```
 
-### 2. Run Automated Unit Tests
+### 2. Run Automated Test Suite
 ```powershell
 python -m unittest discover -s tests -p "test_*.py"
 ```
 
-### 3. Launch Local Server
+### 3. Launch Server
 ```powershell
 python -m uvicorn api.index:app --reload --port 8000
 ```
@@ -43,23 +46,15 @@ Open [http://localhost:8000](http://localhost:8000) in your web browser.
 
 ---
 
-## ☁️ Deploy to Vercel
+## 🔒 Security & Robustness Fixes
 
-### Method A: Vercel CLI
-```powershell
-vercel --prod
-```
-
-### Method B: GitHub / Vercel Web Console
-1. Push this repository to GitHub.
-2. Import repository in [Vercel Dashboard](https://vercel.com/dashboard).
-3. Vercel automatically detects `vercel.json` and deploys the FastAPI serverless functions & web dashboard!
+- **Strict Input Validation**: All API endpoints use Pydantic models (`matrix_size` bounded between 16 and 1024, `iterations` bounded between 1 and 100).
+- **CORS Protection**: Configured with strict origins and disabled credential wildcard sharing.
+- **XSS Protection**: Frontend text rendering uses HTML entity escaping to prevent cross-site scripting.
+- **Atomic State Integrity**: Document indexing validates vocabulary before state mutation; stopword-only or empty texts return HTTP 400 Bad Request.
 
 ---
 
-## 🏆 Hackathon Alignment
+## 📄 License
 
-- **Hardware Target**: Specifically built for Snapdragon X Elite / X Plus HP PCs.
-- **Model Source**: Pre-quantized assets from Qualcomm AI Hub.
-- **Technical Excellence**: Empirical NPU speedup telemetry (4.8x faster, 85% energy savings).
-- **Public Accessibility**: Deployable to Vercel for live judge evaluation.
+This project is licensed under the [MIT License](LICENSE).

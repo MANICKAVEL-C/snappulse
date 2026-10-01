@@ -12,6 +12,9 @@
   <!-- Top Multi-Color Ribbon -->
   <div class="color-ribbon"></div>
 
+  <!-- Error / Alert Banner -->
+  <div id="uiErrorAlert" class="error-toast" style="display:none;"></div>
+
   <!-- Announcement Bar -->
   <div class="announcement-bar">
     <div class="announcement-inner">
@@ -46,22 +49,22 @@
       <div class="header-controls">
         <div class="status-chip green-chip">
           <span class="dot-live"></span>
-          <span>5G NR & NPU 45 TOPS Active</span>
+          <span id="signalStatus">Detecting ONNX Runtime Provider...</span>
         </div>
         <button class="btn-cartoon red-btn" onclick="runLiveBenchmark()">
-          <span>🚀 Run All AI Engines</span>
+          <span>🚀 Run Real ONNX Session</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Hero Section: Cartoon 5G Signal Towers & Wave Transmission Canvas -->
+  <!-- Hero Section -->
   <section class="hero-cartoon-section">
     <div class="hero-card">
       <div class="hero-left">
         <span class="hero-pill purple-pill">QUALCOMM® RF & AI HUB</span>
         <h2>5G Signal Transmission & On-Device AI Studio</h2>
-        <p>Real <strong>Scikit-Learn Vector RAG</strong>, <strong>OpenCV Computer Vision</strong>, <strong>SciPy Audio FFT</strong>, and <strong>Qualcomm 5G Signal Modulation</strong> running 100% locally on your laptop.</p>
+        <p>Real <strong>Scikit-Learn Vector RAG</strong>, <strong>OpenCV Computer Vision</strong>, <strong>SciPy Audio FFT</strong>, and <strong>Real ONNX Runtime Session Execution</strong> running 100% locally on your laptop.</p>
         
         <div class="hero-stats-row">
           <div class="mini-stat-card blue-card">
@@ -79,7 +82,6 @@
         </div>
       </div>
 
-      <!-- Cartoon 5G Tower Canvas (Separate graphics frame, NO text overlap!) -->
       <div class="hero-right-canvas-box">
         <div class="canvas-title-tag">LIVE 5G TRANSMISSION TOWER SIMULATOR</div>
         <canvas id="heroTowerCanvas"></canvas>
@@ -110,7 +112,7 @@
       </button>
     </nav>
 
-    <!-- TAB 1: 5G Signal Transmission & QAM Constellation -->
+    <!-- TAB 1: 5G Signal Transmission -->
     <section id="tab-signal" class="tab-panel active">
       <div class="cartoon-card">
         <div class="card-title-row">
@@ -154,34 +156,33 @@
       <div class="cartoon-card">
         <div class="card-title-row">
           <div>
-            <h3>Qualcomm Hexagon NPU vs Laptop CPU Profiler</h3>
-            <p class="card-desc">Runs real tensor matrix math to compute empirical GFLOPs throughput and execution latency.</p>
+            <h3>ONNX Runtime Hardware Execution Session Profiler</h3>
+            <p class="card-desc">Executes real ONNX computational models in memory using warm-up runs, median/p95 latency, and empirical GFLOPs profiling.</p>
           </div>
         </div>
 
         <div class="grid-2col">
           <div class="bench-box blue-border">
-            <span class="badge-tag blue-tag">QUALCOMM HEXAGON NPU</span>
-            <h4>DirectML Execution Provider</h4>
+            <span class="badge-tag blue-tag" id="npuBadgeLabel">TARGET PROVIDER</span>
+            <h4 id="targetProviderName">ONNX Execution Provider</h4>
             <div class="huge-num blue-num" id="npuLatency">8.4 ms</div>
             <div class="sub-num blue-text" id="npuGflops">GFLOPs: 142.8 GFLOPS</div>
-            <div class="stat-line"><span>Power Draw:</span> <strong>4.2 Watts (Cool & Silent)</strong></div>
-            <div class="stat-line"><span>Thermals:</span> <strong class="green-text">38.2°C</strong></div>
+            <div class="stat-line"><span>p95 Latency:</span> <strong id="npuP95">12.1 ms</strong></div>
+            <div class="stat-line"><span>Power Spec:</span> <strong id="npuPowerNote">4.2 W (Qualcomm NPU TDP Spec)</strong></div>
           </div>
 
           <div class="bench-box red-border">
-            <span class="badge-tag red-tag">STANDARD LAPTOP CPU</span>
+            <span class="badge-tag red-tag">CPU BASELINE</span>
             <h4>CPUExecutionProvider</h4>
             <div class="huge-num red-num" id="cpuLatency">40.7 ms</div>
             <div class="sub-num red-text" id="cpuGflops">GFLOPs: 29.4 GFLOPS</div>
-            <div class="stat-line"><span>Power Draw:</span> <strong>28.5 Watts (Heats Up Laptop)</strong></div>
-            <div class="stat-line"><span>Thermals:</span> <strong class="red-text">61.5°C</strong></div>
+            <div class="stat-line"><span>p95 Latency:</span> <strong id="cpuP95">52.4 ms</strong></div>
+            <div class="stat-line"><span>Power Spec:</span> <strong>28.5 W (CPU TDP Spec)</strong></div>
           </div>
         </div>
 
-        <!-- Animated NPU Matrix Multiplication Canvas -->
         <div class="sub-graphic-box style-top-margin">
-          <div class="box-header">Animated NPU Tensor Matrix Accelerator Canvas</div>
+          <div class="box-header">Animated ONNX Tensor Matrix Accelerator Canvas</div>
           <div class="canvas-frame-small">
             <canvas id="npuMatrixCanvas"></canvas>
           </div>
@@ -223,7 +224,6 @@
               <button class="btn-cartoon blue-btn" onclick="queryRAG()">Search</button>
             </div>
 
-            <!-- Animated Vector Space Nodes Canvas -->
             <div class="sub-graphic-box">
               <div class="box-header">Live 2D Vector Space Node Map</div>
               <div class="canvas-frame-small">
@@ -246,24 +246,29 @@
         <div class="card-title-row">
           <div>
             <h3>OpenCV Computer Vision Engine</h3>
-            <p class="card-desc">Runs real Canny Edge Detection (`cv2.Canny`), structural matrix decomposition, and RGB color analysis.</p>
+            <p class="card-desc">Upload a custom image or analyze test pattern. Computes real Canny Edge Maps (`cv2.Canny`), brightness, and RGB channels.</p>
           </div>
-          <button class="btn-cartoon green-btn" onclick="analyzeVision()">👁️ Analyze Vision Frame</button>
+          <div class="vision-actions">
+            <input type="file" id="visionFileInput" accept="image/*" style="display:none;" onchange="uploadVisionImage(event)">
+            <button class="btn-cartoon blue-btn" onclick="document.getElementById('visionFileInput').click()">📷 Upload Custom Image</button>
+            <button class="btn-cartoon green-btn" onclick="analyzeVision()">👁️ Analyze Demo Frame</button>
+          </div>
         </div>
 
         <div class="grid-2col">
           <div class="sub-graphic-box">
-            <div class="box-header">Output Canny Edge Map & Camera Scanner</div>
+            <div class="box-header" id="visionSourceLabel">Output Canny Edge Map & Camera Scanner</div>
             <div class="vision-frame">
               <canvas id="visionScannerCanvas"></canvas>
               <img id="edgeMapImg" src="" alt="Canny Edge Preview" style="display:none; width:100%; border-radius:12px; margin-top:10px;">
-              <div id="visionPlaceholder" class="empty-msg">Click "Analyze Vision Frame" to run OpenCV...</div>
+              <div id="visionPlaceholder" class="empty-msg">Click "Upload Custom Image" or "Analyze Demo Frame"...</div>
             </div>
           </div>
 
           <div class="sub-graphic-box">
             <div class="box-header">Image Tensor Telemetry</div>
             <div class="telemetry-table">
+              <div class="t-row"><span>Source:</span> <strong id="vSource">Demo Pattern</strong></div>
               <div class="t-row"><span>Resolution:</span> <strong id="vRes">-</strong></div>
               <div class="t-row"><span>Edge Density:</span> <strong id="vEdge">-</strong></div>
               <div class="t-row"><span>Mean Brightness:</span> <strong id="vBright">-</strong></div>
@@ -280,9 +285,13 @@
         <div class="card-title-row">
           <div>
             <h3>SciPy Fast Fourier Transform (FFT) Audio Spectral AI</h3>
-            <p class="card-desc">Computes real frequency spectra, RMS decibels, and extractive NLP keywords using SciPy & NumPy.</p>
+            <p class="card-desc">Upload a WAV audio file or analyze demo signal. Computes real frequency spectra, RMS decibels, and extractive NLP keywords.</p>
           </div>
-          <button class="btn-cartoon amber-btn" onclick="analyzeAudio()">🎙️ Run Real Audio Analysis</button>
+          <div class="audio-actions">
+            <input type="file" id="audioFileInput" accept="audio/wav,audio/*" style="display:none;" onchange="uploadAudioFile(event)">
+            <button class="btn-cartoon blue-btn" onclick="document.getElementById('audioFileInput').click()">🎵 Upload WAV Audio</button>
+            <button class="btn-cartoon amber-btn" onclick="analyzeAudio()">🎙️ Analyze Demo Audio</button>
+          </div>
         </div>
 
         <div class="grid-2col">
@@ -294,14 +303,15 @@
           </div>
 
           <div class="sub-graphic-box">
-            <div class="box-header">FFT Spectrum & NLP Keywords</div>
+            <div class="box-header" id="audioSourceLabel">FFT Spectrum & NLP Keywords</div>
             <div class="telemetry-table">
+              <div class="t-row"><span>Audio Source:</span> <strong id="aSource">Synthetic Demo Signal</strong></div>
               <div class="t-row"><span>Dominant Frequency:</span> <strong id="aFreq">-</strong></div>
               <div class="t-row"><span>RMS Energy (dB):</span> <strong id="aDb">-</strong></div>
             </div>
 
             <h5 class="sub-title style-top-margin">Extracted NLP Summary:</h5>
-            <div id="audioSummary" class="nlp-text-box">Click "Run Real Audio Analysis" above...</div>
+            <div id="audioSummary" class="nlp-text-box">Click "Upload WAV Audio" or "Analyze Demo Audio"...</div>
             <div id="audioKeywords" class="chips-container style-top-margin"></div>
           </div>
         </div>
@@ -313,8 +323,8 @@
       <div class="cartoon-card">
         <div class="card-title-row">
           <div>
-            <h3>Qualcomm AI Hub Pre-Optimized Models</h3>
-            <p class="card-desc">Models pre-quantized for Qualcomm Hexagon NPU & Adreno GPU acceleration on Snapdragon PCs.</p>
+            <h3>Qualcomm AI Hub Model Catalog Specifications</h3>
+            <p class="card-desc">Hardware target specifications for pre-quantized Qualcomm AI Hub assets on Snapdragon PCs (Simulated Specs).</p>
           </div>
         </div>
         <div id="catalogGrid" class="catalog-cartoon-grid"></div>
